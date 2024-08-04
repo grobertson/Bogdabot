@@ -29,7 +29,7 @@ class ChatCommands:
         global kc
         kc = KarmaController(bot)
 
-    async def on_chat_message(self, data):
+    def on_chat_message(self, data):
         if dt.datetime.fromtimestamp(data['time']/1000) < self.bot.start_time:
             return
 

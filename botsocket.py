@@ -37,24 +37,24 @@ class AsyncClient:
         else:
             self.handlers[event] = []
 
-    def to_coroutine(self, f):
+    async def to_coroutine(self, f):
         '''Return f wrapped in a coroutine'''
         async def async_h(*args, **kwargs):
             return f(*args, **kwargs)
         return async_h
 
-    def trigger_wildcard(self, event, data=None):
+    async def trigger_wildcard(self, event, data=None):
         if '*' not in self.handlers: return
         for f in self.handlers['*']:
             self.logger.debug(f'Firing wilcard handler {f.__name__} in response to {event}')
-            asyncio.create_task(asyncio.coroutine(f)(event, data))
+            asyncio.create_task(f(event, data))
 
     async def trigger_event(self, event, data=None):
-        self.trigger_wildcard(event, data)
+        await self.trigger_wildcard(event, data)
         if event not in self.handlers: return
         for f in self.handlers[event]:
             self.logger.debug(f'Firing handler {f.__name__} in response to {event}')
-            asyncio.create_task(asyncio.coroutine(f)(data))
+            asyncio.create_task(self.to_coroutine(f(data)))
 
     async def connect(self, *args, **kwargs): 
         return await self.siosock.connect(*args, **kwargs)

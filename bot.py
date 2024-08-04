@@ -72,5 +72,5 @@ class Bot:
         text = json.dumps(self.state, indent=4)
         with open('state.json', 'w') as f: f.write(text)
 
-    async def on_chatMsg(self, data):
+    def on_chatMsg(self, data):
         self.chat_logger.info(f"{data['username']}: {data['msg']}")
