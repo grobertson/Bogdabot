@@ -7,12 +7,13 @@ import os
 import re
 
 logger = logging.getLogger('cc')
-
+chat_logger = logging.getLogger('chat')
 class CommandError(Exception): pass
 
 kc = None
 
 class ChatCommands:
+    '''Plural of ChatCommand. self.commands contains a list of ChatCommand object instances'''
     def __init__(self, bot):
         self.bot = bot
         self.commands = [
@@ -24,18 +25,24 @@ class ChatCommands:
         ]
         
         self.bot.socket.on('chatMsg', self.on_chat_message)
+        self.bot.socket.on('pm', self.on_priv_message)
+        # Commands start with %, followed by the command name, followed by a space and then arguments
         self.cmd_pattern = re.compile(r'^%(\w*)(?: (.*?))?$')
 
         global kc
         kc = KarmaController(bot)
 
     def on_chat_message(self, data):
+        '''Dispatcher. Check if the message is a command, and if so, call the appropriate command'''
         if dt.datetime.fromtimestamp(data['time']/1000) < self.bot.start_time:
             return
 
         match = self.cmd_pattern.match(data['msg'])
-        if not match: return
-
+        if not match:
+            chat_logger.info(f'{data}')
+            return
+        else:
+            logger.info(f'Matched {match.group(0)}')
         cmd = match.group(1)
         args = []
         if match.group(2): args = match.group(2).split(' ')
@@ -43,13 +50,32 @@ class ChatCommands:
 
         for command in self.commands:
             if cmd != command.command_name:
+                logger.info(f'{cmd} != {command.command_name}')
                 continue
             asyncio.create_task(command.call(user, args))
 
+    def on_priv_message(self, data):
+        '''Dispatcher for private messages.  Check if the message is a command, and if so, call the appropriate command'''
+        match = self.cmd_pattern.match(data['msg'])
+        if not match: return
+        cmd = match.group(1)
+        args = []
+        if match.group(2): args = match.group(2).split(' ')
+        try:
+            user = data['username']
+        except KeyError:
+            logger.error(f'No username in {data}')
+            return
+        
+        for command in self.commands:
+            if cmd != command.command_name: continue
+            asyncio.create_task(command.call(user, args))
+    
 class NoCooldownException(Exception): pass
 
 class ChatCommand:
-    command_name = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' #e.g. roll
+    '''Abstract class for chat commands'''
+    command_name = 'anyword' #e.g. roll
     min_rank = 3
     no_cooldown_rank = 3
     user_cooldown = dt.timedelta(minutes=1)
@@ -122,11 +148,11 @@ class Roll(ChatCommand):
             else: consec += 1
 
         if consec > 1: 
-            msg = f'[3d]{user} rolled {self.get_names[consec]}: {result}!! [/3d] /go'
+            msg = f'*{user} rolled {self.get_names[consec]}*: {result}!!'
         elif random.random() < 0.01:
-            msg = f'[3d]{user} rolled SINGLES: {result}!! [/3d] /feelsmeh /mehfeels'
+            msg = f'*{user} rolled SINGLES*: {result}!!'
         else:
-            msg = f'{user} rolled: {result}'
+            msg = f'*{user} rolled*: {result}'
 
         await self.bot.send_chat_message(msg)
 
@@ -301,7 +327,7 @@ class KarmaRanking(ChatCommand):
         await self.bot.send_chat_message(f'Karma rankings:')
         for i, (name, karma) in enumerate(tallies[:3]):
             await self.bot.send_chat_message(f'{i+1}. {name} ({karma} karma)')
-        await self.bot.send_chat_message(f'Most hated user: {tallies[-1][0]} ({tallies[-1][1]} karma)')
+        await self.bot.send_chat_message(f'Least upvoted user: {tallies[-1][0]} ({tallies[-1][1]} karma)')
         
 
     async def one_user(self, name):

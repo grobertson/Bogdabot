@@ -43,8 +43,10 @@ class Bot:
         await self.join_channel(self.channel)
         await self.send_chat_message('Now handling commands')
         self.start_time = dt.datetime.now()
-        self.logger.info('Bot started')
+        self.logger.info('Registering handlers for Bot()')
         self.socket.on('chatMsg', self.on_chatMsg)
+        self.socket.on('pm', self.on_privMsg)
+        self.logger.info('Bot started')
 
     async def connect(self, server):
         self.logger.info('Connecting to ' + server)
@@ -74,3 +76,6 @@ class Bot:
 
     def on_chatMsg(self, data):
         self.chat_logger.info(f"{data['username']}: {data['msg']}")
+    
+    def on_privMsg(self, data):
+        self.chat_logger.info(f"PRIV:{data['username']}: {data['msg']}")

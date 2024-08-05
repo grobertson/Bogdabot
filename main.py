@@ -51,7 +51,7 @@ if __name__ == '__main__':
             with open('config.yml') as f: CONFIG = yaml.safe_load(f.read())
         except FileNotFoundError:
             with open('config.json') as f: CONFIG = yaml.safe_load(f.read())
-        logger.warn('Config.json should be moved to config.yml')
+            logger.warning('Config.json should be moved to config.yml')
 
         loop.create_task(start())
         loop.run_forever()

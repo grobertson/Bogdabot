@@ -25,6 +25,7 @@ class AsyncClient:
         '''Handler signature should be f(data) for most events, for wildcard
         event signature should be f(event, data)
         '''
+        self.logger.info(f'Registering handler {handler.__name__} for event {event}')
         if event not in self.handlers: self.handlers[event] = []
         self.handlers[event].append(handler)
 
@@ -46,14 +47,14 @@ class AsyncClient:
     async def trigger_wildcard(self, event, data=None):
         if '*' not in self.handlers: return
         for f in self.handlers['*']:
-            self.logger.debug(f'Firing wilcard handler {f.__name__} in response to {event}')
+            self.logger.info(f'Firing wilcard handler {f.__name__} in response to {event}')
             asyncio.create_task(f(event, data))
 
     async def trigger_event(self, event, data=None):
         await self.trigger_wildcard(event, data)
         if event not in self.handlers: return
         for f in self.handlers[event]:
-            self.logger.debug(f'Firing handler {f.__name__} in response to {event}')
+            self.logger.info(f'Firing handler {f.__name__} in response to {event}')
             asyncio.create_task(self.to_coroutine(f(data)))
 
     async def connect(self, *args, **kwargs): 

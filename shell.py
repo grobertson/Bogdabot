@@ -27,6 +27,11 @@ def command_help(bot, text):
     output = 'Available commands:' + '\n\t' + '\n\t'.join(command_names)
     print(output)
 
+def showusers(bot, text):
+    users = sorted(bot.userlist.users.keys())
+    output = 'Known users:' + '\n\t' + '\n\t'.join(users)
+    print(output)
+
 def showstate(bot, text):
     state = bot.state
     args = text.split(' ')[1:]
@@ -45,6 +50,7 @@ commands = {
     'say': say,
     'help': command_help,
     'showstate': showstate,
+    'showusers': showusers
 }
 
 async def interactive_shell(bot, loop):
